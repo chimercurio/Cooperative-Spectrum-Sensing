@@ -1,0 +1,67 @@
+import graphgenerator.Chart4jGraphGenerator;
+
+import java.io.BufferedWriter;
+import java.io.FileWriter;
+import java.util.ArrayList;
+import java.util.HashMap;
+
+import signalprocessing.SignalProcessor;
+import signalprocessing.Utils;
+import model.Signal;
+import agents.FusionCenter;
+import agents.PrimaryUser;
+import agents.TrustedSecondaryUser;
+
+
+public class mainCooperativeSpectrumSensing {
+	
+	public static void main(String[] args) throws Exception {
+		
+		int length = 1000; 
+		int attempts = 100;
+		int inf = -30;
+		int sup = 5;
+		int block=10; 
+		double pfa=0.01; 
+		int numberTSU=5;
+		double energy;
+		String path= null;
+		
+		ArrayList<Double> CooperativeEnergyDetectionMajorityFusion = new ArrayList<Double>();
+		ArrayList<TrustedSecondaryUser> TrustedSecondaryUsers;
+		HashMap<String,ArrayList<ArrayList<Integer>>> userToBinaryDecision;
+		
+		FusionCenter FC=new FusionCenter();
+		PrimaryUser PU= new PrimaryUser();
+		Signal s = PU.createAndSend(length);
+		SignalProcessor sp= new SignalProcessor();
+		Utils u= new Utils();
+		HashMap<String, ArrayList<Double>> DetectionGraph = new HashMap<String, ArrayList<Double>>();
+	
+		energy= sp.computeEnergy(s);
+		TrustedSecondaryUsers= u.createTrustedSecondaryUsers(numberTSU, s, length, energy, attempts, inf, sup, block);
+		
+		userToBinaryDecision= u.genereteBinaryDecisionVectors(TrustedSecondaryUsers, pfa);
+		
+		CooperativeEnergyDetectionMajorityFusion= FC.majorityDecision(inf, sup, userToBinaryDecision);
+		DetectionGraph.put("CED MAJORITY fusion", CooperativeEnergyDetectionMajorityFusion);
+
+		Chart4jGraphGenerator graphPresence= new Chart4jGraphGenerator();
+		graphPresence.drawSNRtoDetectionGraph("Presence of PU in Cooperative Energy Detection (CED)",DetectionGraph, inf, sup);
+		
+		path= "C:/Users/ed0411me/Desktop/";
+		FileWriter w=new FileWriter(path+"detection1.txt");
+		BufferedWriter b=new BufferedWriter(w);
+		b.write("\n");
+		b.write("Probabilità di detection per ogni valore di SNR");
+		b.write("\n");
+		for(int i=0; i<CooperativeEnergyDetectionMajorityFusion.size();i++) {
+			 b.write(CooperativeEnergyDetectionMajorityFusion.get(i)+ " ");
+			 b.write("\n");
+		}
+		
+		b.close();
+	
+	}
+
+}
